@@ -1,0 +1,232 @@
+% beamerthemezibtalk.sty -- ZIB / TU Berlin / HU Berlin talk theme
+%
+% Usage:
+%   \documentclass[aspectratio=169]{beamer}
+%   \usetheme{zibtalk}
+%   \title[Short topic]{Full title}   % short form goes into the footer
+%   \author{Name}
+%   \email{name@example.org}          % footer + title page
+%   \coauthors{A, B and C}            % "Joint work with ..." on the title page
+%   \affil{1,2}                       % superscript affiliation mark, e.g. Name\affil{1}
+%
+% Every \section automatically gets a divider frame (number, title, progress
+% bar). Disable with \sectionpagesfalse; \sectionoutlinetrue adds an outline.
+% The footer carries a progress bar: frame / total frames. Put \appendix
+% before backup or reference frames so that they do not count.
+%
+% Logos (logos/*.pdf, vector):
+%   zib.pdf  https://www.zib.de (inline site logo)
+%   tu.pdf   https://commons.wikimedia.org/wiki/File:TU_Logo_kurz_RGB_rot.svg
+%   hu.pdf   https://commons.wikimedia.org/wiki/File:HU_Siegel_RGB-1.svg
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemezibtalk}[2026/11/13 ZIB/TU/HU talk theme]
+
+\RequirePackage{graphicx}
+\RequirePackage{appendixnumberbeamer}% frames after \appendix do not count
+
+\mode<presentation>
+
+% ---------------------------------------------------------------- settings
+\providecommand{\logodir}{logos}          % where zib.pdf, tu.pdf, hu.pdf live
+\newcommand{\email}[1]{\gdef\insertemail{#1}}
+\def\insertemail{}
+\newcommand{\coauthors}[1]{\gdef\insertcoauthors{#1}}
+\def\insertcoauthors{}
+\newcommand{\affil}[1]{\texorpdfstring{\textsuperscript{\mdseries#1}}{}}% affiliation mark
+\newif\ifsectionpages   \sectionpagestrue
+\newif\ifsectionoutline \sectionoutlinefalse
+
+\newlength{\zt@inset}   \setlength{\zt@inset}{0.4cm}   % header/footer inset
+\newlength{\zt@margin}  \setlength{\zt@margin}{0.8cm}  % body text margin
+\setbeamersize{text margin left=\zt@margin,text margin right=\zt@margin}
+
+% ----------------------------------------------------------------- colours
+\definecolor{zibblue}{RGB}{0,64,150}
+\definecolor{alertred}{RGB}{220,30,30}
+\definecolor{ztgray}{RGB}{105,115,130}
+
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamercolor{structure}{fg=zibblue}
+\setbeamercolor{frametitle}{fg=zibblue}
+\setbeamercolor{alerted text}{fg=alertred}
+\setbeamercolor{footline}{fg=zibblue}
+\setbeamercolor{block title}{fg=white,bg=zibblue}
+\setbeamercolor{block body}{fg=black,bg=zibblue!7}
+\setbeamercolor{block title alerted}{fg=white,bg=alertred}
+\setbeamercolor{block body alerted}{fg=black,bg=alertred!7}
+\setbeamercolor{block title example}{fg=white,bg=ztgray}
+\setbeamercolor{block body example}{fg=black,bg=ztgray!10}
+\setbeamercolor{section in toc}{fg=zibblue}
+
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamerfont{block title}{series=\bfseries,size=\normalsize}
+\setbeamerfont{footline}{size=\tiny}
+
+\setbeamertemplate{itemize items}{\scriptsize$\triangleright$}
+\setbeamertemplate{enumerate items}[default]
+\setbeamertemplate{section in toc}{%
+  \makebox[1.7em][l]{\bfseries\inserttocsectionnumber}\inserttocsection\par}
+\setbeamertemplate{section in toc shaded}[default][40]
+
+% ------------------------------------------------------------------- logos
+\newcommand{\zt@logos}[2]{% #1 = height, #2 = gap
+  \includegraphics[height=#1]{\logodir/zib}\hspace{#2}%
+  \includegraphics[height=#1]{\logodir/tu}\hspace{#2}%
+  \includegraphics[height=#1]{\logodir/hu}}
+\newsavebox{\zt@logobox}
+\AtBeginDocument{\sbox{\zt@logobox}{\zt@logos{0.75cm}{0.25cm}}}
+
+\newcommand{\zt@rule}{%
+  {\color{zibblue}\rule{\dimexpr\paperwidth-2\zt@inset\relax}{0.6pt}}}
+
+% ------------------------------------------------------------- frame title
+% Title on the left (sitting on the rule), logos on the right, rule below.
+\setbeamertemplate{frametitle}{%
+  \vskip2pt
+  \begin{beamercolorbox}[wd=\paperwidth,leftskip=\zt@inset,rightskip=\zt@inset]{frametitle}
+    \noindent
+    \begin{minipage}[b]{\dimexpr\paperwidth-2\zt@inset-\wd\zt@logobox-0.3cm\relax}
+      \raggedright\usebeamerfont{frametitle}\insertframetitle\strut
+      \ifx\insertframesubtitle\@empty\else
+        \par\vskip-2pt{\usebeamerfont{framesubtitle}\color{ztgray}\insertframesubtitle\strut}%
+      \fi
+    \end{minipage}\hfill
+    \begin{minipage}[b]{\wd\zt@logobox}
+      \usebox{\zt@logobox}
+    \end{minipage}\par
+    \nointerlineskip\vskip2pt
+    \noindent\zt@rule
+  \end{beamercolorbox}
+  \vskip2pt
+}
+
+% ------------------------------------------------------------ progress bar
+% \zt@progressbar{<width>}: thin track whose filled part is frame / total.
+\newif\ifzt@appendix
+\newlength{\zt@progress}
+\colorlet{zt@track}{zibblue!18}
+\newcommand{\zt@progressbar}[1]{%
+  \begingroup
+  \@tempcnta=\inserttotalframenumber\relax
+  \ifnum\@tempcnta<1 \@tempcnta=1 \fi
+  \@tempcntb=\c@framenumber
+  \ifnum\@tempcntb>\@tempcnta \@tempcntb=\@tempcnta \fi
+  \ifzt@appendix \@tempcntb=\@tempcnta \fi% full bar in the appendix
+  \setlength{\zt@progress}{\dimexpr(#1)*\@tempcntb/\@tempcnta\relax}%
+  \begin{pgfpicture}
+    \pgfpathrectangle{\pgfpoint{0pt}{-1.6pt}}{\pgfpoint{\dimexpr#1\relax}{3.2pt}}
+    \pgfusepath{use as bounding box}
+    \pgfsetlinewidth{1.2pt}
+    \pgfsetcolor{zt@track}
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{\dimexpr#1\relax}{0pt}}\pgfusepath{stroke}
+    \pgfsetcolor{zibblue}
+    \pgfpathmoveto{\pgfpointorigin}
+    \pgfpathlineto{\pgfpoint{\zt@progress}{0pt}}\pgfusepath{stroke}
+    \pgfpathcircle{\pgfpoint{\zt@progress}{0pt}}{1.6pt}\pgfusepath{fill}
+  \end{pgfpicture}%
+  \endgroup}
+\let\zt@appendix@orig\appendix
+\renewcommand{\appendix}{\zt@appendix@orig\global\zt@appendixtrue}
+\pdfstringdefDisableCommands{\def\translate#1{#1}}% "Appendix" bookmark
+
+% ---------------------------------------------------------------- footline
+% topic > section                name . email                  page / pages
+\newcommand{\zt@sep}{\hspace{0.5em}{\tiny$\triangleright$}\hspace{0.5em}}
+\setbeamertemplate{footline}{%
+  \begin{beamercolorbox}[wd=\paperwidth,leftskip=\zt@inset,rightskip=\zt@inset,dp=4pt]{footline}
+    \zt@progressbar{\paperwidth-2\zt@inset}\par\vskip1.5pt
+    \usebeamerfont{footline}\noindent
+    \rlap{\textbf{\insertshorttitle}%
+      \if\relax\detokenize\expandafter{\insertsectionhead}\relax\else
+        \zt@sep\insertsectionhead
+      \fi}%
+    \hfill
+    \insertshortauthor
+    \ifx\insertemail\@empty\else
+      \hspace{0.6em}\textperiodcentered\hspace{0.6em}%
+      \href{mailto:\insertemail}{\insertemail}%
+    \fi
+    \hfill
+    \llap{\insertframenumber\,/\,\inserttotalframenumber}%
+  \end{beamercolorbox}
+}
+
+% ------------------------------------------------------- full-width band
+% \zt@band{<content>}: blue band bleeding to both page edges.
+\newcommand{\zt@band}[1]{%
+  \par\noindent\makebox[\linewidth][c]{%
+    \setlength{\fboxsep}{0pt}%
+    \colorbox{zibblue}{%
+      \hspace{\zt@margin}%
+      \parbox{\dimexpr\paperwidth-2\zt@margin\relax}{%
+        \vspace*{0.38cm}\color{white}#1\par\vspace{0.38cm}}%
+      \hspace{\zt@margin}}}\par}
+
+% ---------------------------------------------------------- section pages
+% Plain page in the style of the Cookie beamer theme: accent stripe on the
+% left edge, large section number, title, and a progress bar underneath.
+% NB: beamer collects a frame body by scanning for \end; conditionals must
+% not straddle a \begin/\end pair there, hence the helper macros.
+\newcommand{\zt@sectionbackground}{% stripe on the left, logos top right
+  {\color{zibblue}\rule{0.22cm}{\paperheight}}%
+  \hspace{\dimexpr\paperwidth-0.22cm-\zt@inset-\wd\zt@logobox\relax}%
+  \raisebox{\dimexpr\paperheight-0.75cm-0.1cm\relax}{\usebox{\zt@logobox}}}
+\newcommand{\zt@sectionoutline}{%
+  \ifsectionoutline
+    \vskip0.5cm
+    {\linespread{1.25}\small\c@tocdepth=1 % sections only (local)
+     \tableofcontents[currentsection]}%
+  \fi}
+\newcommand{\zt@sectionbody}{%
+  \hspace*{0.4cm}%
+  \begin{minipage}{0.85\textwidth}
+    \raggedright
+    {\fontsize{46}{46}\selectfont\bfseries\color{zibblue}\number\c@section\par}
+    \vskip0.2cm
+    {\huge\bfseries\color{black!85}\secname\par}
+    \vskip0.9cm
+    \zt@progressbar{0.58\paperwidth}\par
+    \zt@sectionoutline
+  \end{minipage}}
+\newcommand{\sectionpage@zt}{%
+  \begingroup
+  \setbeamertemplate{background}{\zt@sectionbackground}%
+  \begin{frame}[plain]
+    \zt@sectionbody
+  \end{frame}
+  \endgroup}
+\AtBeginSection[]{\ifsectionpages\sectionpage@zt\fi}
+
+% -------------------------------------------------------------- title page
+% Use as: \begin{frame}[plain]\titlepage\end{frame}
+\setbeamertemplate{title page}{%
+  \vbox{}\vfill
+  \noindent\zt@logos{1.3cm}{0.6cm}\par
+  \vskip0.55cm
+  \zt@band{%
+    \raggedright
+    {\LARGE\bfseries\inserttitle\par}%
+    \ifx\insertsubtitle\@empty\else
+      \vskip0.2cm{\large\color{white!80!zibblue}\insertsubtitle\par}%
+    \fi}
+  \vskip0.55cm
+  \noindent{\large\bfseries\color{zibblue}\insertauthor}\par
+  \ifx\insertemail\@empty\else
+    \vskip0.1cm\noindent{\small\ttfamily\color{ztgray}\href{mailto:\insertemail}{\insertemail}}\par
+  \fi
+  \ifx\insertcoauthors\@empty\else
+    \vskip0.25cm\noindent{\small Joint work with \insertcoauthors}\par
+  \fi
+  \ifx\insertinstitute\@empty\else
+    \vskip0.1cm\noindent{\small\insertinstitute}\par
+  \fi
+  \vskip0.25cm
+  \noindent{\small\color{ztgray}\insertdate}\par
+  \vfill
+}
+
+\mode<all>
+\endinput

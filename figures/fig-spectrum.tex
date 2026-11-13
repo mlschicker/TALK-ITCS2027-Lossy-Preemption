@@ -1,0 +1,27 @@
+% The same situation under three recall factors.
+% Job j (p_j = 4) runs during [0,2], another job runs during [2,3], then j resumes.
+% Re-familiarization takes (1-gamma)*2 time units: 0, 1, 2.
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % --- row y=2: gamma = 1 --------------------------------------------------
+  \node[rowlabel] at (0,2.3) {$\gamma = 1$ \ (lossless)};
+  \job[2]{jobA}{0}{2}{$j$}
+  \job[2]{other}{2}{3}{}
+  \job[2]{jobA}{3}{5}{$j$}
+  \node[endlabel] at (7,2.3) {$C_j = 5$};
+  % --- row y=1: gamma = 1/2 ------------------------------------------------
+  \node[rowlabel] at (0,1.3) {$\gamma = \tfrac12$};
+  \job[1]{jobA}{0}{2}{$j$}
+  \job[1]{other}{2}{3}{}
+  \refam[1]{jobA}{3}{4}
+  \job[1]{jobA}{4}{6}{$j$}
+  \node[endlabel] at (7,1.3) {$C_j = 6$};
+  % --- row y=0: gamma = 0 --------------------------------------------------
+  \node[rowlabel] at (0,0.3) {$\gamma = 0$ \ (kill-and-restart)};
+  \job{jobA}{0}{2}{$j$}
+  \job{other}{2}{3}{}
+  \refam{jobA}{3}{5}
+  \job{jobA}{5}{7}{$j$}
+  \node[endlabel] at (7,0.3) {$C_j = 7$};
+  \timeaxis{0}{7}
+  \barlegend{0.5}{-1.4}
+\end{tikzpicture}

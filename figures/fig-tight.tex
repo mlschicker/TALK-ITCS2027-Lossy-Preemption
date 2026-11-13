@@ -1,0 +1,42 @@
+% Exact competitive ratios of b-scaling for total weighted completion time (k = 1),
+% with the optimal scaling factor b for each recall factor gamma.
+%   deterministic: 1 + (2 b^(3/2) + gamma (1 - 2 sqrt(b) - b)) / (b - 1),
+%                  b = (3 - gamma + sqrt((3-gamma)^2 - 4 gamma)) / 2      (Theorem 9)
+%   randomized:    (sqrt(b)(1-gamma) + 2b - 1 - gamma) / (sqrt(b) ln b),
+%                  minimized numerically over b                          (Theorem 13)
+\begin{tikzpicture}
+  \begin{axis}[
+      width=7.1cm, height=5.7cm,
+      xmin=0, xmax=1, ymin=1, ymax=6.8,
+      xlabel={recall factor $\gamma$}, ylabel={competitive ratio},
+      xtick={0,0.5,1}, xticklabels={$0$,$\tfrac12$,$1$},
+      ytick={1,...,6},
+      axis lines=left, tick label style={font=\footnotesize}, label style={font=\footnotesize},
+      no markers, clip=false,
+      legend style={draw=none, fill=none, font=\footnotesize, at={(0.98,0.98)}, anchor=north east},
+      legend cell align=left,
+      declare function={
+        bdet(\g)    = (3-\g+sqrt((3-\g)^2-4*\g))/2;
+        rdet(\g,\b) = 1 + (2*\b^1.5 + \g*(1-2*sqrt(\b)-\b))/(\b-1);
+      },
+    ]
+    % --- deterministic b-scaling ------------------------------------------------
+    \addplot[alertred, line width=1pt, domain=0:0.999, samples=200] {rdet(x,bdet(x))};
+    \addlegendentry{deterministic}
+    % --- randomized b-scaling (gamma, ratio at the optimal b) -------------------
+    \addplot[jobA, line width=1pt] coordinates {
+      (0.00,3.0311) (0.05,2.9987) (0.10,2.9655) (0.15,2.9318) (0.20,2.8972)
+      (0.25,2.8618) (0.30,2.8256) (0.35,2.7883) (0.40,2.7500) (0.45,2.7104)
+      (0.50,2.6695) (0.55,2.6270) (0.60,2.5826) (0.65,2.5361) (0.70,2.4869)
+      (0.75,2.4345) (0.80,2.3780) (0.85,2.3157) (0.90,2.2447) (0.95,2.1579)
+      (0.98,2.0881) (0.99,2.0565) (1.00,2.0000)};
+    \addlegendentry{randomized}
+    % --- lower bound for deterministic algorithms -------------------------------
+    \addplot[black!60, line width=1pt, dashed, domain=0:1, samples=2] {3-x};
+    \addlegendentry{lower bound (det.)}
+    % --- known special cases ----------------------------------------------------
+    \fill[alertred] (axis cs:0,6.196) circle (2pt);
+    \fill[jobA]     (axis cs:0,3.031) circle (2pt);
+    \fill[black!70] (axis cs:1,2)     circle (2pt);
+  \end{axis}
+\end{tikzpicture}

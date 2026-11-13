@@ -1,0 +1,22 @@
+% Lower bound: the adversary's move at the first interruption time t >= 1.
+% Bar j shows the progress Y_j of job j at time t (drawn for gamma = 1/2):
+%   lower part   = retained progress gamma*Y_j
+%   hatched part = lost progress (1-gamma)*Y_j
+%   red cap      = delta, since the adversary sets p_j = Y_j + delta
+\begin{tikzpicture}[x=0.62cm,y=0.62cm]
+  \draw[axis] (0.5,0) -- (9.4,0) node[right,lbl]{jobs};
+  \draw[axis] (0.5,0) -- (0.5,3.9) node[above right,lbl,xshift=-8pt]{progress $Y_j$ at time $t$};
+  % --- job / progress Y_j ----------------------------------------------------
+  \foreach \j/\Y in {1/3, 2/3, 3/2, 4/2, 5/2, 6/1, 7/1, 8/1} {
+    \draw[bar=jobA]     (\j,0)       rectangle (\j+0.5,0.5*\Y);   % retained
+    \draw[hatched=jobA] (\j,0.5*\Y)  rectangle (\j+0.5,\Y);       % lost
+    \fill[alertred]     (\j,\Y)      rectangle (\j+0.5,\Y+0.15);  % delta
+  }
+  % --- legend (swatch at x=6, text at x=6.8) ---------------------------------
+  \fill[alertred]     (6,3.15) rectangle ++(0.5,0.15);
+  \node[leg] at (6.8,3.2) {$\delta$: \ $p_j = Y_j + \delta$};
+  \draw[hatched=jobA] (6,2.3)  rectangle ++(0.5,0.4);
+  \node[leg] at (6.8,2.5) {lost: \ $(1-\gamma)\,Y_j$};
+  \draw[bar=jobA]     (6,1.6)  rectangle ++(0.5,0.4);
+  \node[leg] at (6.8,1.8) {retained: \ $\gamma\, Y_j$};
+\end{tikzpicture}

@@ -1,0 +1,21 @@
+% Why this model: time lost when resuming a job, as a function of its progress Y.
+%   lossy preemption: (1-gamma)*Y  -> a line through the origin with slope 1-gamma
+%   gamma = 1: slope 0 (lossless),  gamma = 0: slope 1 (kill-and-restart)
+%   fixed setup time: a horizontal line (independent of the progress)
+\begin{tikzpicture}[x=1cm,y=0.85cm]
+  % --- all recall factors: the wedge between slope 0 and slope 1 ----------
+  \fill[jobA!10] (0,0) -- (4,0) -- (4,4) -- cycle;
+  % --- axes ---------------------------------------------------------------
+  \draw[axis] (0,0) -- (4.6,0);
+  \node[lbl] at (2,-1) {progress $Y$ at the interruption};
+  \draw[axis] (0,0) -- (0,4.6) node[above right,lbl,xshift=-0.5cm]{time lost when resuming};
+  \foreach \t in {0,...,4} \draw[tick] (\t,0) -- ++(0,-0.1) node[below,lbl]{$\t$};
+  \foreach \y in {1,...,4} \draw[tick] (0,\y) -- ++(-0.1,0) node[left,lbl]{$\y$};
+  % --- the two classical models -------------------------------------------
+  \draw[line width=0.9pt, black!55, densely dotted] (0,0) -- (4,4) node[right,lbl]{$\gamma = 0$: restart};
+  \draw[line width=0.9pt, black!55, dashed]         (0,0) -- (4,0) node[above right,lbl]{$\gamma = 1$: lossless};
+  % --- fixed setup time (independent of progress) --------------------------
+  \draw[line width=0.9pt, jobB] (0,1) -- (4,1) node[right,lbl]{fixed setup time};
+  % --- lossy preemption, gamma = 1/2 ---------------------------------------
+  \draw[line width=1.4pt, jobA] (0,0) -- (4,2) node[right,lbl]{$(1-\gamma)\,Y$, \ $\gamma = \tfrac12$};
+\end{tikzpicture}

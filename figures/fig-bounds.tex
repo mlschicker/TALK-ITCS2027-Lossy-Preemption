@@ -1,0 +1,27 @@
+% Lower (dashed) and upper (solid) bounds for deterministic algorithms,
+% weighted k-norm of completion times, as functions of the recall factor gamma.
+%   upper bound: (2 - gamma + 2 sqrt(1-gamma)) * (k+1)^(1/k)      (Theorem 2)
+%   lower bound: (((2-gamma)^(k+1) - 1) / (1-gamma))^(1/k)        (Theorem 1)
+\begin{tikzpicture}
+  \begin{axis}[
+      width=7.1cm, height=5.7cm,
+      xmin=0, xmax=1, ymin=1, ymax=8.4,
+      xlabel={recall factor $\gamma$}, ylabel={competitive ratio},
+      xtick={0,0.5,1}, xticklabels={$0$,$\tfrac12$,$1$},
+      ytick={1,...,8},
+      axis lines=left, tick label style={font=\footnotesize}, label style={font=\footnotesize},
+      domain=0:1, samples=101, no markers,
+      legend style={draw=none, fill=none, font=\footnotesize, at={(0.98,0.98)}, anchor=north east},
+      legend cell align=left,
+    ]
+    % --- k = 1 ---------------------------------------------------------------
+    \addplot[jobA, line width=1pt]         {2*(2-x+2*sqrt(1-x))};   \addlegendentry{$k=1$}
+    \addplot[jobA, line width=1pt, dashed, forget plot] {3-x};
+    % --- k = 2 ---------------------------------------------------------------
+    \addplot[jobB, line width=1pt]         {sqrt(3)*(2-x+2*sqrt(1-x))}; \addlegendentry{$k=2$}
+    \addplot[jobB, line width=1pt, dashed, forget plot] {sqrt(x^2-5*x+7)};
+    % --- k -> infinity -------------------------------------------------------
+    \addplot[jobC, line width=1pt]         {2-x+2*sqrt(1-x)};       \addlegendentry{{$k\to\infty$}}% inner braces needed: pgfplots trips over \to
+    \addplot[jobC, line width=1pt, dashed, forget plot] {2-x};
+  \end{axis}
+\end{tikzpicture}

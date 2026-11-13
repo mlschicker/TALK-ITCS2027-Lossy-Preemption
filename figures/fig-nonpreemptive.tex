@@ -1,0 +1,15 @@
+% Non-clairvoyant and non-preemptive: the adversary makes the first job long.
+% One long job (length M, drawn 6 units wide) and six short jobs (0.25 wide).
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % --- row y=1: the algorithm commits to a job that turns out to be long --
+  \node[rowlabel] at (0,1.3) {algorithm};
+  \job[1]{jobA}{0}{6}{long job, $p = M$}
+  \foreach \s in {6,6.25,...,7.25} { \job[1]{jobB}{\s}{\s+0.25}{} }
+  \node[endlabel] at (7.5,1.3) {$\sum_j C_j \approx n\cdot M$};
+  % --- row y=0: the optimum runs the short jobs first --------------------
+  \node[rowlabel] at (0,0.3) {optimum};
+  \foreach \s in {0,0.25,...,1.25} { \job{jobB}{\s}{\s+0.25}{} }
+  \job{jobA}{1.5}{7.5}{long job, $p = M$}
+  \node[endlabel] at (7.5,0.3) {$\sum_j C_j \approx M$};
+  \timearrow{0}{7.5}
+\end{tikzpicture}

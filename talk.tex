@@ -1,0 +1,420 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+\usepackage{amsmath,amssymb}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+\usetheme{zibtalk}
+\input{figures/styles}   % shared TikZ styles; each picture is one file in figures/
+
+% --- talk metadata (short title / author appear in the footer) -----------
+\title[Lossy Preemption]{Non-Clairvoyant Scheduling with Lossy Preemption}
+\author[Maximilian Schicker]{Maximilian Schicker\affil{1,2}}
+\email{schicker@zib.de}
+\coauthors{Sven J\"ager\affil{2}, Max Klimm\affil{2} and Phillip Warode\affil{3}}
+\institute{\affil{1}\,Zuse Institute Berlin \quad
+  \affil{2}\,Technische Universit\"at Berlin \quad
+  \affil{3}\,Humboldt-Universit\"at zu Berlin}
+\date{ITCS 2027}
+
+% --- notation -------------------------------------------------------------
+% \src{key} / \src[note]{key}: small grey citation, clickable (jumps to the References frame)
+\newcommand{\src}[2][]{{\footnotesize\color{ztgray}%
+  \if\relax\detokenize{#1}\relax\cite{#2}\else\cite[#1]{#2}\fi}}
+\setbeamertemplate{bibliography item}[text]
+\setbeamercolor{bibliography item}{fg=zibblue}
+\setbeamercolor{bibliography entry author}{fg=black}
+\setbeamercolor{bibliography entry title}{fg=zibblue}
+\setbeamercolor{bibliography entry location}{fg=ztgray}
+\setbeamercolor{bibliography entry note}{fg=ztgray}
+\newcommand{\doi}[1]{\href{https://doi.org/#1}{doi:\,\detokenize{#1}}}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\Alg}{\mathrm{Alg}}
+\newcommand{\Opt}{\mathrm{Opt}}
+\newcommand{\WRR}{\mathrm{WRR}}
+
+\begin{document}
+
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+% =========================================================================
+\section[Setting]{Non-Clairvoyant Scheduling}
+
+\begin{frame}{Focus on one task, or multitask?}
+  \begin{itemize}
+    \item One machine, jobs $j = 1,\dots,n$ available at time $0$,
+          weights $w_j$, processing times $p_j$
+    \item Goal: minimize the total weighted completion time $\sum_j w_j C_j$
+    \item Known $p_j$: run jobs in order of $p_j / w_j$ --- optimal,
+          and \alert{no preemption needed} \src{smith56}
+  \end{itemize}
+  \vfill
+  \centering
+  \input{figures/fig-spt}
+\end{frame}
+
+\begin{frame}{More general: the weighted $k$-norm}
+  \begin{itemize}
+    \item We minimize the \textbf{weighted $k$-norm} of completion times, for any $k \ge 1$:
+      \[ \norm{C}_{k,w} = \Bigl(\,\sum_{j=1}^{n} w_j\, C_j^{\,k}\Bigr)^{1/k} \]
+  \end{itemize}
+  \centering
+  \input{figures/fig-knorm}
+  \vfill
+  \begin{itemize}
+    \item \textbf{Why?} The sum only rewards a good average: single jobs may finish very late.
+          The maximum ignores everything but the last job.
+    \item The $k$-norm \alert{balances average performance and fairness}
+          \src{bp10}\,\src{mv22}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{What if durations are unknown?}
+  \begin{itemize}
+    \item \textbf{Non-clairvoyant:} $p_j$ is revealed only when job $j$ completes
+    \item Committing to a job is risky: it may turn out to be very long
+  \end{itemize}
+  \vfill
+  \centering
+  \input{figures/fig-nonpreemptive}
+  \vfill
+  \begin{itemize}
+    \item \alert{No non-preemptive algorithm has a constant competitive ratio:}
+          it is $\Omega(n)$, even with randomization \src[Prop.~2.1]{jssw25}
+    \item So an algorithm must preempt --- but what does a preemption cost?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Preemption: two classical models}
+  \begin{columns}[t]
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Lossless preemption}
+        Switching between jobs is free.
+        \begin{itemize}
+          \item Round-robin is $2$-competitive for $\sum_j C_j$ \src{mpt94}
+          \item $(k+1)^{1/k}$ for the $k$-norm \src{mv22}
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.47\textwidth}
+      \begin{block}{Kill-and-restart}
+        An interrupted job starts from scratch.
+        \begin{itemize}
+          \item $b$-scaling: $1 + 3\sqrt{3} \approx 6.20$
+          \item randomized: $\approx 3.03$ \src{jssw25}
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \vfill
+  \begin{center}
+    In practice, returning to an interrupted task costs time ---\\
+    \alert{less than starting over, but more the further you had come.}
+  \end{center}
+\end{frame}
+
+% =========================================================================
+\section[Model]{Lossy Preemption}
+
+\begin{frame}{The lossy preemption model}
+  \begin{columns}[c]
+    \begin{column}{0.42\textwidth}
+      \begin{itemize}
+        \item \textbf{Recall factor} $\gamma \in [0,1]$
+        \item A job with progress $Y$ is interrupted
+        \item When it resumes, the first $(1-\gamma)\,Y$ time units are
+              \alert{re-familiarization}: no new progress
+        \item After processing for $\tau$ time units:
+              \[ Y' = \max\{\,Y,\ \gamma Y + \tau\,\} \]
+        \item \alert{Progress never decreases:} an interval shorter than
+              $(1-\gamma)\,Y$ is wasted, $Y' = Y$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.56\textwidth}
+      \centering
+      \input{figures/fig-model}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Between kill-and-restart and lossless preemption}
+  \centering
+  \input{figures/fig-spectrum}
+  \vfill
+  \begin{itemize}
+    \item $\gamma = 1$: classical preemption \qquad $\gamma = 0$: kill-and-restart
+    \item The re-familiarization time grows with the progress already made
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Why this model?}
+  \begin{columns}[c]
+    \begin{column}{0.45\textwidth}
+      \begin{itemize}
+        \item \textbf{One parameter} connects the two classical models
+        \item Returning to a task costs more the further you had come:
+              overhead \alert{proportional to the progress}
+        \item Earlier overhead models do not depend on the progress:
+          \begin{itemize}
+            \item fixed setup time per preemption \src{lc04}\,\src{cll12}
+            \item penalty in the objective \src{blss06}
+          \end{itemize}
+        \item Forgetting only the \emph{last probe} instead:
+              same $b$-scaling schedules (next slide)
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.53\textwidth}
+      \centering
+      \input{figures/fig-cost}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{A natural variant: forgetting only the last probe}
+  A job has retained progress $R$, is processed for a probe of length $\tau$, and is interrupted.
+  \begin{itemize}
+    \item \textbf{This talk:} the interruption shrinks \alert{all} progress:
+          \ $R' = \gamma\,(R+\tau)$
+    \item \textbf{Variant:} only the last probe shrinks, and only once:
+          \ $R' = R + \gamma\,\tau$
+  \end{itemize}
+  \vfill
+  \centering
+  \input{figures/fig-variant}
+  \vfill
+  \begin{itemize}
+    \item Same extremes $\gamma = 0$ and $\gamma = 1$
+    \item Under $b$-scaling: the same schedule as our model with recall factor
+          $\gamma' = \frac{\gamma\, b}{b-1+\gamma} \ge \gamma$
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Benchmark: the competitive ratio}
+  \begin{itemize}
+    \item \textbf{Competitive ratio} of a non-clairvoyant algorithm for the weighted $k$-norm:
+      \[ \sup_{(p,w)} \; \frac{\norm{C^{\Alg}(p,w)}_{k,w}}{\norm{C^{\Opt}(p,w)}_{k,w}} \]
+    \item The optimum knows all $p_j$ and never preempts
+    \item Randomized algorithms: expected objective value, oblivious adversary
+    \item \textbf{Question:} what is the best ratio for each norm $k$ and each recall factor $\gamma$?
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Our results}
+  \begin{columns}[c]
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item \textbf{Lower bound} for every $k$ and $\gamma$\\
+              ($k=1$: \ $3-\gamma$)
+        \item \textbf{Upper bound} via $b$-scaling:
+              \[ \bigl(2-\gamma+2\sqrt{1-\gamma}\bigr)\,(k+1)^{1/k} \]
+        \item $\gamma = 1$: weighted round-robin is \alert{optimal}
+        \item Randomization improves the bound
+        \item $k=1$: \alert{exact} ratios of $b$-scaling
+        \item Parallel machines, $\gamma = 0$:\\ ratio $4.547$ instead of $9.899$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \input{figures/fig-bounds}\\[-2pt]
+      {\footnotesize\color{ztgray} solid: upper bound \quad dashed: lower bound}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% =========================================================================
+\section[\texorpdfstring{$b$}{b}-Scaling]{The \texorpdfstring{$b$}{b}-Scaling Algorithm}
+
+\begin{frame}{The $b$-scaling algorithm}
+  \begin{itemize}
+    \item Scaling factor $b > 1$, rounds $i \in \mathbb{Z}$
+    \item Round $i$: process every unfinished job $j$ until its progress
+          reaches $w_j\, b^{i}$ --- or until it completes
+    \item Time spent on $j$ in round $i$:\quad
+          $\underbrace{(1-\gamma)\,w_j b^{i-1}}_{\text{re-familiarization}}
+           \;+\; \underbrace{w_j b^{i} - w_j b^{i-1}}_{\text{new progress}}$
+  \end{itemize}
+  \vfill
+  \centering
+  \input{figures/fig-bscaling}\\[2pt]
+  {\footnotesize\color{ztgray} $b = 2$, \ $\gamma = \tfrac12$, \ unit weights, \ $p = (1,3,4)$ \ (earlier rounds omitted)}
+\end{frame}
+
+\begin{frame}{Upper bound for every $k$}
+  \begin{theorem}
+    Deterministic $b$-scaling is $\frac{b(b-\gamma)}{b-1}\,(k+1)^{1/k}$-competitive.
+    For $b = 1+\sqrt{1-\gamma}$ this is $\bigl(2-\gamma+2\sqrt{1-\gamma}\bigr)(k+1)^{1/k}$.
+  \end{theorem}
+  \centering
+  \input{figures/fig-rounding}
+  \vfill
+  \begin{enumerate}
+    \item \textbf{Inflate:} \ $p'_j = \frac{b-\gamma}{b-1}\,\bar p_j$ \ = time $b$-scaling
+          spends on $j$ \ $\Rightarrow$ \ $C^{\Alg}_j(p) \le C^{\WRR}_j(p')$
+    \item \textbf{Weighted round-robin} is $(k+1)^{1/k}$-competitive with lossless preemption
+    \item \textbf{Compare optima:} \ $p'_j \le \frac{b-\gamma}{b-1}\, b\, p_j$
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{Randomization helps}
+  \begin{itemize}
+    \item Random offset $\Xi \sim U[0,1]$: round $i$ has target progress $w_j\, b^{\,i+\Xi}$
+    \item Random job order within each round
+  \end{itemize}
+  \vfill
+  \centering
+  \input{figures/fig-offset}
+  \vfill
+  \begin{theorem}
+    Randomized $b$-scaling has competitive ratio at most
+    $\displaystyle \frac{b-\gamma}{b-1}\,\Bigl(\frac{b^{k}-1}{k \ln b}\Bigr)^{1/k}(k+1)^{1/k}$.
+  \end{theorem}
+  {\footnotesize\color{ztgray} The rounding loss $b$ is replaced by its average over the offset;
+   for $k=1$ this is $\frac{b-1}{\ln b}$.}
+\end{frame}
+
+% =========================================================================
+\section{Lower Bound}
+
+\begin{frame}{A lower bound for every $k$ and $\gamma$}
+  \begin{theorem}
+    Every deterministic non-clairvoyant algorithm has competitive ratio at least
+    \[ \Bigl(\frac{(2-\gamma)^{k+1}-1}{1-\gamma}\Bigr)^{1/k} \ \text{ for } \gamma < 1,
+       \qquad (k+1)^{1/k} \ \text{ for } \gamma = 1 . \]
+  \end{theorem}
+  \begin{columns}[c]
+    \begin{column}{0.4\textwidth}
+      \begin{itemize}
+        \item Many identical-looking jobs; none finishes before time $1$
+        \item First interruption at time $t \ge 1$:
+              all jobs are \alert{almost} done
+        \item Each job still needs $(1-\gamma)\,Y_j + \delta$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \centering
+      \input{figures/fig-lowerbound}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Lower bound: the continuous limit}
+  \begin{itemize}
+    \item If the algorithm never interrupts after time $1$: the job it works on is very long
+    \item Otherwise let $n \to \infty$: the $k$-norm becomes an $L^k$-norm of a function
+    \item Chebyshev's integral inequality: the algorithm's best response is to have
+          processed \alert{all jobs equally}
+  \end{itemize}
+  \vfill
+  \begin{block}{Special cases}
+    \begin{itemize}
+      \item $k = 1$: \ $3 - \gamma$ \quad
+            ($\gamma = 1$: $2$ \src{mpt94}, \ $\gamma = 0$: $3$ \src{jssw25})
+      \item $k \to \infty$: \ $2 - \gamma$, although the makespan itself is trivial
+      \item $\gamma = 1$: \ $(k+1)^{1/k}$, matched by weighted round-robin
+    \end{itemize}
+  \end{block}
+\end{frame}
+
+% =========================================================================
+\section[Tight Bounds]{Tight Bounds and Parallel Machines}
+
+\begin{frame}{Exact ratios for total weighted completion time}
+  \begin{columns}[c]
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item Deterministic $b$-scaling: exactly
+          \[ 1 + \frac{2b^{3/2} + \gamma\,(1 - 2\sqrt{b} - b)}{b-1} \]
+        \item Randomized $b$-scaling: exactly
+          \[ \frac{\sqrt{b}\,(1-\gamma) + 2b - 1 - \gamma}{\sqrt{b}\,\ln b} \]
+        \item Weighted mutual delays $\to$ quadratic forms $\to$ largest eigenvalue
+        \item Tight instances from the eigenvectors
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \centering
+      \input{figures/fig-tight}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Identical parallel machines}
+  \centering
+  \input{figures/fig-machines}
+  \vfill
+  \begin{itemize}
+    \item Assign every job to a uniformly random machine, then run randomized
+          $b$-scaling on each machine --- \alert{no migration}
+    \item Competitive ratio at most $\tfrac32 \times$ the single-machine ratio
+    \item $\gamma = 0$: \ $\approx 4.547$, previously $9.899$
+          (deterministic, migratory, unweighted) \src{jssw25}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Summary and open problems}
+  \begin{block}{Lossy preemption}
+    Resuming a job with progress $Y$ costs $(1-\gamma)\,Y$ ---
+    between kill-and-restart ($\gamma=0$) and lossless preemption ($\gamma=1$).
+  \end{block}
+  \begin{itemize}
+    \item Lower and upper bounds for every $k$-norm and every $\gamma$; tight for $\gamma = 1$
+    \item Exact analysis of $b$-scaling for $k=1$; non-migratory algorithm for parallel machines
+  \end{itemize}
+  \vfill
+  \begin{exampleblock}{Open problems}
+    \begin{itemize}
+      \item Close the gap between lower and upper bounds for $\gamma < 1$
+      \item Release dates, precedence constraints, unrelated machines
+      \item Other models of forgetting: memory decay over time, recall that improves with repetition
+    \end{itemize}
+  \end{exampleblock}
+\end{frame}
+
+% =========================================================================
+\appendix   % frames from here on do not count towards the total / progress bar
+\section*{References}
+
+\begin{frame}[allowframebreaks]{References}
+  \fontsize{7.5}{9.5}\selectfont
+  \begin{thebibliography}{JSSW '25}
+    \bibitem[BLSS '06]{blss06}
+      Y.~Bartal, S.~Leonardi, G.~Shallom, R.~Sitters.
+      \newblock On the value of preemption in scheduling.
+      \newblock \emph{APPROX}, 2006. \doi{10.1007/11830924_6}
+    \bibitem[BP '10]{bp10}
+      N.~Bansal, K.~Pruhs.
+      \newblock Server scheduling to balance priorities, fairness, and average quality of service.
+      \newblock \emph{SIAM J.\ Comput.}\ 39(7), 2010. \doi{10.1137/090772228}
+    \bibitem[CLL '12]{cll12}
+      H.-L.~Chan, T.-W.~Lam, R.~Li.
+      \newblock Online flow time scheduling in the presence of preemption overhead.
+      \newblock \emph{APPROX}, 2012. \doi{10.1007/978-3-642-32512-0_8}
+    \bibitem[JSSW '25]{jssw25}
+      S.~J\"ager, G.~Sagnol, D.~Schmidt genannt Waldschmidt, P.~Warode.
+      \newblock Competitive kill-and-restart and preemptive strategies for non-clairvoyant scheduling.
+      \newblock \emph{Math.\ Program.}\ 210, 2025. \doi{10.1007/s10107-024-02118-8}
+    \bibitem[LC '04]{lc04}
+      Z.~Liu, T.~C.~E.~Cheng.
+      \newblock Minimizing total completion time subject to job release dates and preemption penalties.
+      \newblock \emph{J.\ Sched.}\ 7(4), 2004. \doi{10.1023/B:JOSH.0000031424.35504.c4}
+    \bibitem[MPT '94]{mpt94}
+      R.~Motwani, S.~Phillips, E.~Torng.
+      \newblock Nonclairvoyant scheduling.
+      \newblock \emph{Theor.\ Comput.\ Sci.}\ 130(1), 1994. \doi{10.1016/0304-3975(94)90151-1}
+    \bibitem[MV '22]{mv22}
+      B.~Moseley, S.~Vardi.
+      \newblock The efficiency-fairness balance of round robin scheduling.
+      \newblock \emph{Oper.\ Res.\ Lett.}\ 50(1), 2022. \doi{10.1016/j.orl.2021.11.008}
+    \bibitem[Smith '56]{smith56}
+      W.~E.~Smith.
+      \newblock Various optimizers for single-stage production.
+      \newblock \emph{Naval Res.\ Logist.\ Quart.}\ 3(1--2), 1956. \doi{10.1002/nav.3800030106}
+  \end{thebibliography}
+\end{frame}
+
+\end{document}

@@ -1,0 +1,17 @@
+% The weighted k-norm interpolates between the sum (k = 1) and the maximum (k -> infinity).
+% Marks at x = 0, 4, 10; formulas below, meaning below that.
+\begin{tikzpicture}[x=1cm,y=1cm]
+  \draw[axis] (-0.5,0) -- (11,0) node[right,lbl]{$k$};
+  % --- marks: position / label above / formula / meaning -------------------
+  \foreach \x/\k/\f/\m in {
+      0/{k=1}/{\sum_j w_j C_j}/{average},
+      4/{k=2}/{\bigl(\sum_j w_j C_j^{2}\bigr)^{1/2}}/{},
+      10/{k\to\infty}/{\max_j C_j}/{worst case (makespan)}} {
+    \draw[tick, line width=1pt] (\x,0.15) -- (\x,-0.15);
+    \node[lbl, above] at (\x,0.2)  {$\k$};
+    \node[lbl]        at (\x,-0.7) {$\f$};
+    \node[lbl, jobA]  at (\x,-1.3) {\m};
+  }
+  % --- what changes along the axis ------------------------------------------
+  \draw[->, alertred, line width=0.7pt] (1.5,0.9) -- node[above,lbl]{late completions weigh more and more} (8.5,0.9);
+\end{tikzpicture}
